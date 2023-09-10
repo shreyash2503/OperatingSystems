@@ -1,5 +1,4 @@
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -29,13 +28,7 @@ public class Load {
         this.dcflag = 0;
         this.memory = new char[100][4];
         this.buffer = new char[40];
-
     }
-
-
-
-
-
 
     public void init(){
         this.m = 0;
@@ -51,7 +44,6 @@ public class Load {
             writer = new FileWriter(filename2);
             // writer = new BufferedWriter(wr);
 
-            writer.write("Memory before execution\n");
 
             String line = null;
             String subString = null;
@@ -64,9 +56,6 @@ public class Load {
                 }
 
                 if(subString.equals("$END")){
-                    System.out.println("End card detected");
-                    writer.write("\n\n");
-                    printMemory();
                     continue;
                 }
 
@@ -77,8 +66,6 @@ public class Load {
                         EXECUTE();
                         continue;
                     }
-                    System.out.println("Before");
-                    System.out.println(m);
 
                     String code = line;
                     // System.out.println(code);
@@ -110,8 +97,6 @@ public class Load {
                     if(n != 0){
                         m = m + (10 - n);
                     }
-                    System.out.println("After");
-                    System.out.println(m);
                     // break;
                     continue;
                 }
@@ -133,9 +118,8 @@ public class Load {
     }
 
 
-    public void EXECUTE(){
+    public void EXECUTE() throws IOException{
         while(1 < 2){
-            System.out.println("This is execute");
             if(IC == 100){
                 break;
             }
@@ -187,33 +171,36 @@ public class Load {
 
     }
 
-    public void MASTERMODE(){
+    public void MASTERMODE() throws IOException{
         int i = this.SI;
         if(i == 1){
             READ();
         } else if(i == 2){
             WRITE();
         } else if(i == 3){
-            IC = 100;
+            TERMINATE();
 
         }
         SI = 0;
 
     }
 
+    public void TERMINATE() throws IOException{
+        System.out.println("End card detected");
+        writer.write("\n\n");
+        printMemory();
+
+    }
+
     public void READ(){
-        int flag = 0;
         IR[3] = '0';
 
         String line = new String(IR);
 
         int num = Integer.parseInt(line.substring(2));
-        System.out.println("Num is " + num);
 
         try{
             line = reader.readLine();
-            System.out.println("I am the reader");
-            System.out.println(line);
 
         } catch(IOException e){
             e.printStackTrace();
@@ -253,7 +240,6 @@ public class Load {
         }
         System.out.println("----------------------In writing mode----------------");
         try{
-            System.out.println(total);
             writer.write(total);
             writer.write("\n");
             writer.flush();
@@ -270,8 +256,5 @@ public class Load {
             }
             System.out.println();
         }
-       
-
     }
-    
 }
