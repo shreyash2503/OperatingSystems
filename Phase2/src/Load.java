@@ -29,6 +29,8 @@ public class Load {
     int curr;
     String[] errors = {"NO ERROR", "OUT OF DATA", "LINE LIMIT EXCEEDED", "TIME LIMIT EXCEEDED", "OPERATION CODE ERROR", "OPERAND ERROR", "INVALID PAGE FAULT", "TIME LIMIT EXCEEDED WITH OPERATION ERROR", "TIME LIMIT EXCEEDED WITH OPERAND ERROR"};
     boolean flag;
+    boolean reachedH;
+    boolean reachedEnd;
 
     /**
      * 
@@ -42,6 +44,8 @@ public class Load {
         this.pcbList = new ArrayList<>();
         this.curr = -1;
         this.flag = false;
+        this.reachedH = false;
+        this.reachedEnd = false;
     }
 
     public void init(){
@@ -51,6 +55,8 @@ public class Load {
         this.TI = 0;
         this.curr = -1;
         this.flag = false;
+        this.reachedH = false;
+        this.reachedEnd = false;
 
         for(int i = 0; i < 300; i++){
             for(int j = 0; j < 4; j++){
@@ -96,7 +102,6 @@ public class Load {
             String subString = null;
             
             while((line = reader.readLine()) != null){
-                System.out.println(line);
                 if(line.length() >= 4){
                     subString = line.substring(0, 4);
                 } else {
@@ -141,7 +146,7 @@ public class Load {
                     if((m / 10.0) < 1){
                         frameNo = "0" + frameNo;
                     }
-                    System.out.println(frameNo);
+                    // System.out.println(frameNo);
                     memory[curr][0] = '1';
                     memory[curr][2] = frameNo.charAt(0);
                     memory[curr][3] = frameNo.charAt(1);
@@ -185,9 +190,11 @@ public class Load {
 
     public void printMemory(){
         for(int i = 0; i < 300; i++){
+            System.out.print(i + " ");
             for(int j = 0; j < 4; j++){
-                System.out.print(memory[i][j]);
+                System.out.print(memory[i][j] + " | ");
             }
+            System.out.println();
             System.out.println();
         }
     }
@@ -197,7 +204,7 @@ public class Load {
         if(0 <= VA && VA < 100){
             int pt = PTR + VA / 10;
             if(memory[pt][0] == '0'){
-                System.out.println("This is a call from addressmap");
+                // System.out.println("This is a call from addressmap");
                 PI = 3;
                 return -1;
             }
@@ -217,34 +224,13 @@ public class Load {
     }
 
 
-    void READ(int RA){
-        try {
-            String line = reader.readLine();
-            if(line.contains("$END")){
-                TERMINATE(1);
-                return;
-            } else {
-                System.out.println(line);
-                buffer = line.toCharArray();
-                for(int i=0;i<line.length();){
-                    memory[RA][i % 4] = buffer[i];
-                    i++;
-                    if(i % 4 == 0){
-                        RA++;
-                    }
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } 
-
-
-
-    }
+    
     void WRITE(int RA){
         if(pcb.LLC + 1 > pcb.TLL){
+            TI = 2;
             TERMINATE(2);
             flag = true;
+            return;
 
         } else {
             String total = "";
@@ -262,7 +248,7 @@ public class Load {
                 }
                 total = total.concat(t);
             }
-            System.out.println("This is t: " + total);
+            // System.out.println("This is t: " + total);
             System.out.println("----------------------In writing mode----------------");
             try{
                 writer.write(total);
@@ -275,25 +261,44 @@ public class Load {
 
 
         }
+        SI = 0;
 
     }
     void TERMINATE(int EM){
         try {
             writer.write("\n");
-            if(EM == 0){
+            if(EM == 0 ){
+                // writer.write("Job ID: " + pcb.jOBID + "\n");
+                // writer.write("TLL: " + pcb.TLL + "\n");
+                // writer.write("TLC" + pcb.LLC + "\n");
+                // writer.write("ERROR: " + errors[EM] + "\n");
+                
                 writer.write("Job ID: " + pcb.jOBID + "\n");
-                writer.write("TTC: " + pcb.TTC + "\n");
+                writer.write("IC:  " + IC + "\n");
+                writer.write("IR:  " + String.valueOf(IR) + "\n");
                 writer.write("TTL: " + pcb.TTL + "\n");
+                writer.write("TTC:  " + pcb.TTC + "\n");
                 writer.write("TLL: " + pcb.TLL + "\n");
-                writer.write("ERROR: " + errors[EM] + "\n");
+                writer.write("LLC:  " + pcb.LLC + "\n");
+                writer.write("NO ERROR" + "\n");
+
             } else {
                 writer.write("Job ID: " + pcb.jOBID + "\n");
-                writer.write("TTC: " + pcb.TTC + "\n");
-                writer.write("TTL: " + pcb.TTL + "\n");
-                writer.write("TLL: " + pcb.TLL + "\n");
+                // writer.write("TLL: " + pcb.TLL + "\n");
+                // writer.write("TLC" + pcb.LLC + "\n");
                 writer.write("ERROR: " + errors[EM] + "\n");
+                writer.write("IC:  " + IC + "\n");
+                writer.write("IR:  " + String.valueOf(IR) + "\n");
+                writer.write("TTL: " + pcb.TTL + "\n");
+                writer.write("TTC:  " + pcb.TTC + "\n");
+
+                writer.write("TLL:  " + pcb.TLL + "\n");
+                writer.write("LLC:  " + pcb.LLC + "\n");
                 writer.write("\n");
                 writer.write("\n");
+                SI = 0;
+                TI = 0;
+                PI = 0;
             }
             writer.flush();
         } catch (IOException e) {
@@ -301,61 +306,97 @@ public class Load {
         }
 
     }
-
-    void MASTERMODE(int RA){;
-        if(TI == 0 && PI == 0 && SI != 0){
-            System.out.println("Hello I occuredmox" + 1);
-            switch(SI){
-                case 1:
-                    READ(RA);
-                    break;
-                case 2:
-                    WRITE(RA);
-                    break;
-                case 3:
-                    TERMINATE(0);
-                    flag = true;
-                    break;
-            }
-            SI = 0;
-        }else if(TI != 0 && PI == 0 && SI != 0){
-            System.out.println("Hello I occuredmox" + 2);
-            switch(SI){
-                case 1:
-                    TERMINATE(3);
-                    flag = true;
-                    break;
-                case 2:
-                    WRITE(RA);
-                    if(!flag){
-                        TERMINATE(3);
+    void READ(int RA){
+        try {
+            String line = reader.readLine();
+            if(line.contains("$END")){
+                reachedEnd = true;
+                TERMINATE(1);
+                return;
+            } else {
+                // System.out.println(line);
+                buffer = line.toCharArray();
+                for(int i=0;i<line.length();){
+                    memory[RA][i % 4] = buffer[i];
+                    i++;
+                    if(i % 4 == 0){
+                        RA++;
                     }
-                    break;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } 
+
+        SI = 0;
+
+
+
+    }
+
+    void MASTERMODE(int RA){
+        if(TI == 0 && PI == 0 && SI != 0){
+            // System.out.println("Hello I occuredmox" + 1);
+            switch(SI){
+                case 1:
+                    SI = 0;
+                    READ(RA);
+
+                    return;
+                case 2:
+                    SI = 0;
+                    WRITE(RA);
+                    return;
                 case 3:
+                    SI = 0;
                     TERMINATE(0);
                     flag = true;
-                    break;
+                    return;
+            }
+        }else if(TI == 2 && PI == 0 && SI != 0){
+            // System.out.println("Hello I occuredmox" + 2);
+            switch(SI){
+                case 1:
+                    SI = 0;
+                    TERMINATE(1); /// 3
+                    flag = true;
+                    return;
+                case 2:
+                    SI = 0;
+                    WRITE(RA);
+                    // if(!flag){
+                        TERMINATE(3);
+                    // }
+                    return;
+                case 3:
+                    SI = 0;
+                    TERMINATE(0);
+                    flag = true;
+                    return;
             }
 
-            SI = 0;
+            // SI = 0;
         } else if(TI == 0 && PI != 0){
-            System.out.println("Hello I occuredmox" + 3 + " " + PI);
+            // System.out.println("Hello I occuredmox" + 3 + " " + PI);
 
             switch(PI){
                 case 1:
+                    // System.out.println("Shreyash1");
                     TERMINATE(4);
                     flag = true;
-                    break;
+                    return;
                 case 2:
+                    // System.out.println("Shreyash2");
                     TERMINATE(5);
                     flag = true;
-                    break;
+                    return;
                 case 3:
-                    System.out.println("Hello I occuredmox" + 3);
+                    // System.out.println("Shreyash3");
+                    // System.out.println("Hello I occuredmox" + 3);
 
-                    PI = 0;
+                    // PI = 0;
                     if((IR[0] == 'G' && IR[1] == 'D') || (IR[0] == 'S' && IR[1] == 'R')){
-                        System.out.println("page falut occurred");
+                        System.out.println("Valid Page fault occurred");
                         pageFault = true;
                         int m = ALLOCATE();
                         String t = String.valueOf(m);
@@ -369,54 +410,57 @@ public class Load {
 
                         curr++;
 
-                        if(pcb.TTC + 1 > pcb.TTL){
-                            TI = 2;
-                            PI = 3;
-                            MASTERMODE(0);
-                            break;
-                        }
-                    } else if((IR[0] == 'P' && IR[1] == 'D') || (IR[0] == 'L' && IR[1] == 'R') || (IR[0] == 'C' && IR[1] == 'R') || (IR[0] == 'B' && IR[1] == 'T')){
+                        // if(pcb.TTC + 1 > pcb.TTL){
+                        //     TI = 2;
+                        //     PI = 3;
+                        //     MASTERMODE(0);
+                        //     break;
+                        // }
                         PI = 0;
+                    } else if((IR[0] == 'P' && IR[1] == 'D') || (IR[0] == 'L' && IR[1] == 'R') || (IR[0] == 'C' && IR[1] == 'R') || (IR[0] == 'B' && IR[1] == 'T')){
+                        // PI = 0;
                         TERMINATE(6);
                         flag = true;
-                        if(pcb.TTC + 1 > pcb.TTL){
-                            TI = 2;
-                            PI = 3;
-                            MASTERMODE(0);
-                            break;
-                        }
-                    } else {
-                        PI = 1;
-                        MASTERMODE(0);
-                        break;
-                    }
-                    break;
+                        // if(pcb.TTC + 1 > pcb.TTL){
+                        //     TI = 2;
+                        //    PI = 3;
+                        //     MASTERMODE(0);
+                        //     break;
+                        // }
+                    } 
+                    // {
+                    //     PI = 1;
+                    //     MASTERMODE(0);
+                    //     break;
+                    // }
+                    return;
 
 
             }
-            PI = 0;
-        } else {
-            System.out.println("Hello I occured" + 4);
+            // PI = 0;
+        } else if(TI == 2 && PI != 0) {
+            // System.out.println("Hello I occured" + 4);
             switch(PI){
                 case 1:
-                    PI = 0;
                     TERMINATE(7);
                     flag = true;
-                    break;
+                    return;
                 case 2:
-                    PI = 2;
                     TERMINATE(8);
                     flag = true;
-                    break;
-                case 3:
-                    TERMINATE(3);
-                    flag = true;
-                    break;
+                    return;
                 
             }
 
-            PI = 0;
         }
+        if(TI == 2 && PI == 3){
+            TERMINATE(3);
+        } else if(TI == 2 && SI == 0){
+            TERMINATE(3);
+        }
+
+        PI = 0;
+        SI = 0;
 
     }
 
@@ -429,94 +473,123 @@ public class Load {
     }
 
     void EXECUTEUSERPROGRAM(){
-        System.out.println("execute");
+        // System.out.println("execute");
          while(true){
-            System.out.println("execute");
+            // System.out.println("execute");
             if(flag){
                 break;
             }
-            int pt = ADDRESSMAP(IC);
-            if(PI != 0){
-                System.out.println("Hello I occured" + 1);
-                MASTERMODE(0);
-                if(pageFault){
-                    System.out.println("Hello I occured" + 1);
-                    continue;
-                }
+            if(reachedEnd){
                 break;
             }
-            System.out.println("This is it" + new String(memory[pt]));
+            int pt = ADDRESSMAP(IC);
+            // if(PI != 0){
+            //     System.out.println("Hello I occured" + 1);
+            //     MASTERMODE(0);
+            //     if(pageFault){
+            //         System.out.println("Hello I occured" + 1);
+            //         continue;
+            //     }
+            //     break;
+            // }
+            // System.out.println("This is it" + new String(memory[pt]));
             IR[0] = memory[pt][0];
             IR[1] = memory[pt][1];
             IR[2] = memory[pt][2];
             IR[3] = memory[pt][3];
             IC++;
-            System.out.println("Value of IR is ::" + String.valueOf(IR));
-            for(int i=0;i<2;i++){
-                if(!(IR[i + 2] > 47 && IR[i + 2] < 58) || IR[i + 2] == 0){
-                    PI = 2;
-                    break;
-                }
+            // System.out.println("Value of IR is ::" + String.valueOf(IR));
+            if(IR[0] != 'H'){
+                    for(int i=0;i<2;i++){
+                        if(!(IR[i + 2] > 47 && IR[i + 2] < 58)){
+                            PI = 2;
+                            break;
+                        }
+                    }
             }
-            if(PI != 0){
-                System.out.println("Hello I occured" + 2);
+            
+            if(pcb.TTC + 1 > pcb.TTL && PI == 2){
+                TI = 2;
                 MASTERMODE(0);
-                break;
+                return;
             }
+           
+            // if(PI != 0){
+            //     System.out.println("Hello I occured" + 2);
+            //     MASTERMODE(0);
+            //     break;
+            // }
+            int ra = -1;
+            if(IR[0] != 'H' && PI == 0){
+                ra = ADDRESSMAP(Integer.parseInt(String.valueOf(IR[2]) + String.valueOf(IR[3])));
 
-            int ra = ADDRESSMAP(Integer.parseInt(String.valueOf(IR[2]) + String.valueOf(IR[3])));
-            System.out.println("The real address is ::" + ra);
+            }
+            // System.out.println("The real address is ::" + ra);
             if(PI != 0){
                 MASTERMODE(0);
                 if(pageFault){
-                    System.out.println("Hello I occured" + 3);
+                    // System.out.println("Hello I occured" + 3);
                     IC --;
                     pageFault = false;
+                    PI = 0;
                     continue;
                 }
                 break;
             }
+            
             if(IR[0] == 'G' && IR[1] == 'D'){
                 SI = 1;
-                SIMULATION();
                 MASTERMODE(ra); 
+                SIMULATION();
             } else if(IR[0] == 'P' && IR[1] == 'D'){
                 SI = 2;
-                SIMULATION();
                 MASTERMODE(ra);
+                SIMULATION();
             } else if(IR[0] == 'H'){
                 SI = 3;
-                SIMULATION();
                 MASTERMODE(ra);
+                SIMULATION();
+                reachedH = true;
                 break;
             } else if(IR[0] == 'L' && IR[1] == 'R'){
-                SIMULATION();
                 for(int i = 0; i < 4; i++){
                     R[i] = memory[ra][i];
                 }
-            } else if(IR[0] == 'S' && IR[1] == 'R'){
                 SIMULATION();
+            } else if(IR[0] == 'S' && IR[1] == 'R'){
                 for(int i = 0; i < 4; i++){
                     memory[ra][i] = R[i];
                 }
-            } else if(IR[0] == 'C' && IR[1] == 'R'){
                 SIMULATION();
+            } else if(IR[0] == 'C' && IR[1] == 'R'){
                 if(memory[ra][0] == R[0] && memory[ra][1] == R[1] && memory[ra][2] == R[2] && memory[ra][3] == R[3]){
                     C = 1;
                 } else {
                     C = 0;
                 }
-            } else if(IR[0] == 'B' && IR[1] == 'T'){
                 SIMULATION();
+            } else if(IR[0] == 'B' && IR[1] == 'T'){
                 if(C == 1){
                     IC = Integer.parseInt(String.valueOf(IR[2]) + String.valueOf(IR[3]));
                     C = 0;
                 }
+                SIMULATION();
             } else {
                 PI = 1;
+                // System.out.println("Hello I occured ytladf;ksl;as");
+                
+                SIMULATION();
                 MASTERMODE(0);
-                break;
+                return;
             }
+            
+            if(reachedH){
+                reachedH = true;
+                return;
+            }
+           
+
+           
 
             for(int i=0;i<4;i++){
                 IR[i] = '\u0000';
