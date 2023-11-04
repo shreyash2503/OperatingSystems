@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+
+
+
 public class Load {
 
     char [][] memory;
@@ -130,6 +133,8 @@ public class Load {
                 }
                 if(subString.equals("$DTA")){
                     STARTEXECUTION();
+                    printMemory();
+                    printPageTable(PTR);
                     // break;
                     continue;
                 }
@@ -199,6 +204,24 @@ public class Load {
         }
     }
 
+    public void printPageTable(int ra){
+        System.out.println("============================Page Table============================");
+        System.out.println();
+        for(int i=ra;i<ra+10;i++){
+            System.out.print(i + " ");
+            for(int j=0;j<4;j++){
+                System.out.print(memory[i][j] + " | ");
+            }
+            System.out.println();
+            System.out.println();
+        }
+        System.out.println();
+        System.out.println("=================================================================");
+        System.out.println();
+
+
+    }
+
 
     int ADDRESSMAP(int VA){
         if(0 <= VA && VA < 100){
@@ -218,9 +241,6 @@ public class Load {
     void STARTEXECUTION(){
         this.IC = 0;
         EXECUTEUSERPROGRAM();
-
-       
-
     }
 
 
@@ -272,6 +292,11 @@ public class Load {
                 // writer.write("TLL: " + pcb.TLL + "\n");
                 // writer.write("TLC" + pcb.LLC + "\n");
                 // writer.write("ERROR: " + errors[EM] + "\n");
+                if(IR[0] == 'H'){
+                   for(int i=1;i<4;i++){
+                       IR[i] = ' ';
+                   }
+                }
                 
                 writer.write("Job ID: " + pcb.jOBID + "\n");
                 writer.write("IC:  " + IC + "\n");
@@ -585,6 +610,11 @@ public class Load {
             
             if(reachedH){
                 reachedH = true;
+                return;
+            }
+
+            if(TI == 2){
+                MASTERMODE(0);
                 return;
             }
            

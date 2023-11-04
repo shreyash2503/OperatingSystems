@@ -4,6 +4,7 @@ public class App {
         try{
             load.LOAD("input.txt", "output.txt");
             load.printMemory();
+            load.printPageTable(load.PTR);
 
         } catch(Exception e){
             e.printStackTrace();
