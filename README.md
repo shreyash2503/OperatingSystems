@@ -41,4 +41,5 @@
     - Data Card :- This contains the data to be used by the CPU
   - #### Ouput.txt
     - This file will produce the output of all these instructions
-    <iframe src="./pdfs/phase1.pdf" width="100%" height="500px"></iframe>
+  - #### Below is overall flow of the project :-
+    [Link to PDF](./pdfs/phase1.pdf)
