@@ -1,6 +1,6 @@
-# Multiprogramming Operating Systems
+# Simulation of a Operating Systems
 
-### This is a repository which implements Multiprogramming Operating Systems in Java
+### This is a repository which implements simulation of a Operating System in Java
 
 ### There are two types of instructions in this project :-
 
