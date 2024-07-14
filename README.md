@@ -1,4 +1,4 @@
-# Simulation of a Operating Systems
+# Simulation of a Operating System
 
 ### This is a repository which implements simulation of a Operating System in Java
 
